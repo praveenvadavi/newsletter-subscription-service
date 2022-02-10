@@ -1,15 +1,13 @@
 package com.buzz.newslettersubscriptionservice;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-import com.buzz.newslettersubscriptionservice.dao.SubscriptionRepository;
 import com.buzz.newslettersubscriptionservice.dao.UserRepository;
 import com.buzz.newslettersubscriptionservice.endpoints.NewsLetterSubscriptionV1;
-import com.buzz.newslettersubscriptionservice.processors.UserProcessor;
+import com.buzz.newslettersubscriptionservice.models.Subscription;
+import com.buzz.newslettersubscriptionservice.models.UserInfo;
+import com.buzz.newslettersubscriptionservice.response.ErrorResponse;
 import com.buzz.newslettersubscriptionservice.response.SubmitResponse;
+import com.buzz.newslettersubscriptionservice.response.UserNewsLetterEmailResponse;
+import com.buzz.newslettersubscriptionservice.response.UserSubscriptionResponse;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,37 +16,77 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.ArgumentMatchers.anyLong;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 class NewsletterSubscriptionServiceApplicationTests {
 
-	@Autowired
-	MockMvc mockMvc;
+    @MockBean
+    UserRepository userRepository;
 
-	@MockBean
-	UserProcessor userProcessor;
+    @Autowired
+    NewsLetterSubscriptionV1 newsLetterSubscriptionV1;
 
-	@MockBean
-	SubmitResponse response;
+    @Test
+    public void testForUserSubscribedToNewsLetter() {
 
-	@MockBean
-	UserRepository userRepository;
+        Optional<UserInfo> userInfo = Optional.of(UserInfo.builder().firstName("User1FirstName").lastName("User1LastName").userSubscribedToNewsLetter(true).build());
+        SubmitResponse response = new UserNewsLetterEmailResponse(1L, true);
+        ResponseEntity responseEntity = new ResponseEntity(response, HttpStatus.OK);
+        Mockito.when(userRepository.findById(anyLong())).thenReturn(userInfo);
 
-	@MockBean
-	SubscriptionRepository subscriptionRepository;
+        ResponseEntity<SubmitResponse> actualResponseEntity = newsLetterSubscriptionV1.userSubscribedToNewsLetter(1L);
+        assertNotNull(actualResponseEntity);
+        assertEquals(responseEntity, actualResponseEntity);
 
-	@Test
-	public void testUserSubscribedToNewsLetter() throws Exception{
+    }
 
-		ResponseEntity<SubmitResponse> responseEntity= new ResponseEntity<>(response, HttpStatus.OK);
+    @Test
+    public void testUserSubscribedToNewsLetterBadRequest() {
 
-		Mockito.when(userProcessor.findTheUserNewsLetterStatus(1L)).thenReturn(responseEntity);
+        Optional<UserInfo> userInfo = Optional.empty();
+        SubmitResponse response = new ErrorResponse("Given user doesn't exists");
+        ResponseEntity responseEntity = new ResponseEntity(response, HttpStatus.BAD_REQUEST);
+        Mockito.when(userRepository.findById(anyLong())).thenReturn(userInfo);
 
-		mockMvc.perform(get("/buzz/v1/newsletter/subscriptions/1/email"))
-				.andExpect(status().isOk())
-				.andExpect(content().contentType("application/json"));
-	}
+        ResponseEntity<SubmitResponse> actualResponseEntity = newsLetterSubscriptionV1.userSubscribedToNewsLetter(1L);
+        assertNotNull(actualResponseEntity);
+        assertEquals(responseEntity, actualResponseEntity);
+
+    }
+
+    @Test
+    public void testForuserSubscriptionStatus() {
+        Optional<UserInfo> userInfo = Optional.of(UserInfo.builder().firstName("User1FirstName").lastName("User1LastName").userSubscribedToNewsLetter(true).subscription(new Subscription(4L, "Platinum", 1, 1)).build());
+        Optional<UserSubscriptionResponse> subInfo = Optional.of(UserSubscriptionResponse.builder().userId(1L).subscription(userInfo.get().getSubscription()).build());
+        SubmitResponse response = new UserSubscriptionResponse(1L, subInfo.get().getSubscription());
+        ResponseEntity responseEntity = new ResponseEntity(response, HttpStatus.OK);
+        Mockito.when(userRepository.findById(anyLong())).thenReturn(userInfo);
+
+        ResponseEntity<SubmitResponse> actualResponseEntity = newsLetterSubscriptionV1.userSubscriptionStatus(1L);
+        assertNotNull(actualResponseEntity);
+        assertEquals(responseEntity, actualResponseEntity);
+
+    }
+
+    @Test
+    public void testuserSubscriptionStatusBadRequest() {
+
+        Optional<UserInfo> userInfo = Optional.empty();
+        SubmitResponse response = new ErrorResponse("Given user doesn't exists");
+        ResponseEntity responseEntity = new ResponseEntity(response, HttpStatus.BAD_REQUEST);
+        Mockito.when(userRepository.findById(anyLong())).thenReturn(userInfo);
+
+        ResponseEntity<SubmitResponse> actualResponseEntity = newsLetterSubscriptionV1.userSubscriptionStatus(1L);
+        assertNotNull(actualResponseEntity);
+        assertEquals(responseEntity, actualResponseEntity);
+
+    }
 
 }

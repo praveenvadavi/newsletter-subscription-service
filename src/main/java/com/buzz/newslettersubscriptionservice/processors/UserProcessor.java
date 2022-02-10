@@ -92,27 +92,6 @@ public class UserProcessor {
         }
     }
 
-    /*public ResponseEntity<Subscription> findTheUserSubscribed(Long userId){
-        try{
-            Optional<UserInfo> user = userRepository.findById(userId);
-            if(user.isPresent() && user.get().getSubscription()!= null){
-                return new ResponseEntity<>(user.get().getSubscription(), HttpStatus.OK);
-            }
-            return new ResponseEntity<>( HttpStatus.NO_CONTENT);
-        }
-        catch (Exception e){
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    public Subscription findTheUserSubscribed(Long userId){
-        Optional<UserInfo> user = userRepository.findById(userId);
-            if(user.isPresent() && user.get().getSubscription()!= null){
-                return user.get().getSubscription();
-            }
-            return null;
-    }*/
-
     /*TODO: Delete below implementations*/
     public List<UserInfo> loadUserData(){
 
